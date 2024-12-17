@@ -1,0 +1,212 @@
+{
+    "trusted_departments": {
+        "schema": [
+            {
+                "name": "department_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID único do departamento"
+            },
+            {
+                "name": "department_name",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Nome do departamento"
+            }
+        ],
+        "description": "Tabela contendo os departamentos confiáveis do banco de dados de varejo."
+    },
+    "trusted_order": {
+        "schema": [
+            {
+                "name": "order_id",
+                "type": "INTEGER",
+                "mode": "REQUIRED",
+                "description": "ID único do pedido"
+            },
+            {
+                "name": "order_date",
+                "type": "TIMESTAMP",
+                "mode": "REQUIRED",
+                "description": "Data e hora em que o pedido foi realizado"
+            },
+            {
+                "name": "order_customer_id",
+                "type": "INTEGER",
+                "mode": "REQUIRED",
+                "description": "ID do cliente que fez o pedido"
+            },
+            {
+                "name": "order_status",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Status atual do pedido (ex: 'em processamento', 'enviado')"
+            }
+        ],
+        "description": "Tabela contendo os pedidos confiáveis do banco de dados de varejo."
+    },
+    "trusted_categories": {
+        "schema": [
+            {
+                "name": "category_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID único da categoria"
+            },
+            {
+                "name": "category_department_id",
+                "type": "INT64",
+                "mode": "NULLABLE",
+                "description": "ID do departamento ao qual a categoria pertence"
+            },
+            {
+                "name": "category_name",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Nome da categoria"
+            }
+        ],
+        "description": "Tabela contendo as categorias confiáveis do banco de dados de varejo."
+    },
+    "trusted_products": {
+        "schema": [
+            {
+                "name": "product_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID único do produto"
+            },
+            {
+                "name": "product_category_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID da categoria à qual o produto pertence"
+            },
+            {
+                "name": "product_name",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Nome do produto"
+            },
+            {
+                "name": "product_description",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Descrição detalhada do produto"
+            },
+            {
+                "name": "product_price",
+                "type": "FLOAT",
+                "mode": "NULLABLE",
+                "description": "Preço do produto"
+            },
+            {
+                "name": "product_image",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "URL da imagem do produto"
+            }
+        ],
+        "description": "Tabela contendo os produtos confiáveis do banco de dados de varejo."
+    },
+    "trusted_customers": {
+        "schema": [
+            {
+                "name": "customer_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID único do cliente"
+            },
+            {
+                "name": "customer_fname",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Primeiro nome do cliente"
+            },
+            {
+                "name": "customer_lname",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Sobrenome do cliente"
+            },
+            {
+                "name": "customer_email",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Endereço de e-mail do cliente"
+            },
+            {
+                "name": "customer_password",
+                "type": "STRING",
+                "mode": "REQUIRED",
+                "description": "Senha de acesso do cliente"
+            },
+            {
+                "name": "customer_street",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Endereço da rua onde o cliente reside"
+            },
+            {
+                "name": "customer_city",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Cidade onde o cliente reside"
+            },
+            {
+                "name": "customer_state",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Estado onde o cliente reside"
+            },
+            {
+                "name": "customer_zipcode",
+                "type": "STRING",
+                "mode": "NULLABLE",
+                "description": "Código postal do cliente"
+            }
+        ],
+        "description": "Tabela contendo os clientes confiáveis do banco de dados de varejo."
+    },
+    "trusted_order_items": {
+        "schema": [
+            {
+                "name": "order_item_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID único do item do pedido"
+            },
+            {
+                "name": "order_item_order_id",
+                "type": "INT64",
+                "mode": "NULLABLE",
+                "description": "ID do pedido ao qual o item pertence"
+            },
+            {
+                "name": "order_item_product_id",
+                "type": "INT64",
+                "mode": "REQUIRED",
+                "description": "ID do produto relacionado ao item do pedido"
+            },
+            {
+                "name": "order_item_quantity",
+                "type": "INT64",
+                "mode": "NULLABLE",
+                "description": "Quantidade do produto no item do pedido"
+            },
+            {
+                "name": "order_item_subtotal",
+                "type": "FLOAT",
+                "mode": "NULLABLE",
+                "description": "Subtotal do item no pedido"
+            },
+            {
+                "name": "order_item_product_price",
+                "type": "FLOAT",
+                "mode": "NULLABLE",
+                "description": "Preço do produto no momento da compra"
+            }
+        ],
+        "description": "Tabela contendo os itens dos pedidos confiáveis do banco de dados de varejo."
+    }
+}

@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 # Configurações do projeto
 PROJECT_ID = "bankmarketingdatapipeline"
 DATASET_NAME = "db_retail"
-RAW_TABLE_NAME = "raw_departments"
-TRUSTED_TABLE_NAME = "trusted_departments"
+RAW_TABLE_NAME = "raw_customers"
+TRUSTED_TABLE_NAME = "trusted_customers"
 BUCKET_NAME = "ingestion-raw-data-retail"
-PREFIX = "departments/"
+PREFIX = "customers/"
 
 def setup_bigquery_credentials():
     """Configura as credenciais do BigQuery"""
@@ -32,7 +32,7 @@ def get_most_recent_file(bucket_name: str, prefix: str) -> str:
     bucket = storage_client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=prefix)
 
-    pattern = re.compile(r"departments_(\d{14})")
+    pattern = re.compile(r"customers_(\d{14})")
     latest_file = None
     latest_datetime = None
 
@@ -75,16 +75,58 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
         job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "customer_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único do cliente"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "customer_fname", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Primeiro nome do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_lname", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Sobrenome do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_email", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Endereço de e-mail do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_password", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Senha de acesso do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_street", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Endereço da rua onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_city", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Cidade onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_state", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Estado onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_zipcode", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Código postal do cliente"
             )
             ]
         )
@@ -99,7 +141,7 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
         table = client.get_table(table_id)
 
         # Atualizar descrição da tabela
-        table.description = "Tabela contendo os departamentos confiáveis do banco de dados de varejo."
+        table.description = "Tabela contendo os clientes confiáveis do banco de dados de varejo."
         table = client.update_table(table, ["description"])
 
         # Pipeline termina aqui se as tabelas foram criadas
@@ -121,16 +163,58 @@ def load_data_to_raw(client: bigquery.Client, raw_table_id: str, uri: str):
     job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "customer_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único do cliente"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "customer_fname", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Primeiro nome do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_lname", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Sobrenome do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_email", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Endereço de e-mail do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_password", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Senha de acesso do cliente"
+            ),
+            bigquery.SchemaField(
+                "customer_street", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Endereço da rua onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_city", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Cidade onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_state", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Estado onde o cliente reside"
+            ),
+            bigquery.SchemaField(
+                "customer_zipcode", 
+                "STRING", 
+                mode="REQUIRED", 
+                description="Código postal do cliente"
             )
             ]
         )
@@ -152,12 +236,20 @@ def merge_raw_to_trusted(client: bigquery.Client, raw_table_id: str, trusted_tab
     merge_query = f"""
     MERGE `{trusted_table_id}` T
     USING `{raw_table_id}` R
-    ON T.department_id = R.department_id
+    ON T.customer_id = R.customer_id
     WHEN MATCHED THEN
-        UPDATE SET department_name = R.department_name
+        UPDATE SET
+            customer_fname = R.customer_fname,
+            customer_lname = R.customer_lname,
+            customer_email = R.customer_email,
+            customer_password = R.customer_password,
+            customer_street = R.customer_street,
+            customer_city = R.customer_city,
+            customer_state = R.customer_state,
+            customer_zipcode = R.customer_zipcode
     WHEN NOT MATCHED THEN
-        INSERT (department_id, department_name)
-        VALUES (R.department_id, R.department_name)
+        INSERT (customer_id, customer_fname, customer_lname, customer_email, customer_password, customer_street, customer_city, customer_state, customer_zipcode)
+        VALUES (R.customer_id, R.customer_fname, R.customer_lname, R.customer_email, R.customer_password, R.customer_street, R.customer_city, R.customer_state, R.customer_zipcode)
     """
     query_job = client.query(merge_query)
     query_job.result()
@@ -172,7 +264,7 @@ def main():
     raw_table_id = f"{dataset_id}.{RAW_TABLE_NAME}"
     trusted_table_id = f"{dataset_id}.{TRUSTED_TABLE_NAME}"
 
-    prefix = "departments/"
+    prefix = "customers/"
     # Obter o arquivo mais recente
     try:
         uri = get_most_recent_file(BUCKET_NAME, PREFIX)

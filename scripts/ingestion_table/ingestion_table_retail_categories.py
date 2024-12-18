@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 # Configurações do projeto
 PROJECT_ID = "bankmarketingdatapipeline"
 DATASET_NAME = "db_retail"
-RAW_TABLE_NAME = "raw_departments"
-TRUSTED_TABLE_NAME = "trusted_departments"
+RAW_TABLE_NAME = "raw_categories"
+TRUSTED_TABLE_NAME = "trusted_categories"
 BUCKET_NAME = "ingestion-raw-data-retail"
-PREFIX = "departments/"
+#BUCKET_NAME = "raw_retail"
+PREFIX = "categories/"
 
 def setup_bigquery_credentials():
     """Configura as credenciais do BigQuery"""
@@ -32,7 +33,7 @@ def get_most_recent_file(bucket_name: str, prefix: str) -> str:
     bucket = storage_client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=prefix)
 
-    pattern = re.compile(r"departments_(\d{14})")
+    pattern = re.compile(r"categories_(\d{14})")
     latest_file = None
     latest_datetime = None
 
@@ -75,16 +76,22 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
         job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "category_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único da categoria"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "category_department_id", 
+                "integer", 
+                mode="REQUIRED", 
+                description="ID da departamento categoria"
+            ),
+            bigquery.SchemaField(
+                "category_name", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Nome da categoria"
             )
             ]
         )
@@ -99,7 +106,7 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
         table = client.get_table(table_id)
 
         # Atualizar descrição da tabela
-        table.description = "Tabela contendo os departamentos confiáveis do banco de dados de varejo."
+        table.description = "Tabela contendo os pedidos confiáveis do banco de dados de varejo."
         table = client.update_table(table, ["description"])
 
         # Pipeline termina aqui se as tabelas foram criadas
@@ -121,16 +128,22 @@ def load_data_to_raw(client: bigquery.Client, raw_table_id: str, uri: str):
     job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "category_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único da categoria"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "category_department_id", 
+                "integer", 
+                mode="REQUIRED", 
+                description="ID da departamento categoria"
+            ),
+            bigquery.SchemaField(
+                "category_name", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Nome da categoria"
             )
             ]
         )
@@ -152,12 +165,13 @@ def merge_raw_to_trusted(client: bigquery.Client, raw_table_id: str, trusted_tab
     merge_query = f"""
     MERGE `{trusted_table_id}` T
     USING `{raw_table_id}` R
-    ON T.department_id = R.department_id
+    ON T.category_id = R.category_id
     WHEN MATCHED THEN
-        UPDATE SET department_name = R.department_name
+        UPDATE SET category_department_id = R.category_department_id,
+                   category_name = R.category_name
     WHEN NOT MATCHED THEN
-        INSERT (department_id, department_name)
-        VALUES (R.department_id, R.department_name)
+        INSERT (category_id, category_department_id, category_name)
+        VALUES (R.category_id, R.category_department_id, R.category_name)
     """
     query_job = client.query(merge_query)
     query_job.result()
@@ -172,7 +186,7 @@ def main():
     raw_table_id = f"{dataset_id}.{RAW_TABLE_NAME}"
     trusted_table_id = f"{dataset_id}.{TRUSTED_TABLE_NAME}"
 
-    prefix = "departments/"
+    prefix = "categories/"
     # Obter o arquivo mais recente
     try:
         uri = get_most_recent_file(BUCKET_NAME, PREFIX)

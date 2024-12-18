@@ -15,41 +15,50 @@ logger = logging.getLogger(__name__)
 # Configurações do projeto
 PROJECT_ID = "bankmarketingdatapipeline"
 DATASET_NAME = "db_retail"
-RAW_TABLE_NAME = "raw_departments"
-TRUSTED_TABLE_NAME = "trusted_departments"
-BUCKET_NAME = "ingestion-raw-data-retail"
-PREFIX = "departments/"
+RAW_TABLE_NAME = "raw_order"
+TRUSTED_TABLE_NAME = "trusted_order"
+BUCKET_NAME = "raw_retail"
+PREFIX = "order/"
 
 def setup_bigquery_credentials():
     """Configura as credenciais do BigQuery"""
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../../key.json"
 
-def get_most_recent_file(bucket_name: str, prefix: str) -> str:
+def get_most_recent_file_from_log(log_file: str) -> str:
     """
-    Encontra o arquivo mais recente em um bucket do GCS.
+    Encontra o arquivo mais recente com base em um log local de uploads.
     """
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blobs = bucket.list_blobs(prefix=prefix)
+    try:
+        with open(log_file, "r") as log:
+            lines = log.readlines()
+        
+        if not lines:
+            raise FileNotFoundError("O arquivo de log está vazio.")
 
-    pattern = re.compile(r"departments_(\d{14})")
-    latest_file = None
-    latest_datetime = None
+        # Assume que cada linha do log segue o formato: "gs://bucket_name/prefix/orders_YYYYMMDDHHMMSS.csv"
+        latest_file = None
+        latest_datetime = None
 
-    for blob in blobs:
-        match = pattern.search(blob.name)
-        if match:
-            file_datetime = datetime.strptime(match.group(1), "%Y%m%d%H%M%S")
-            if latest_datetime is None or file_datetime > latest_datetime:
-                latest_datetime = file_datetime
-                latest_file = blob.name
+        for line in lines:
+            file_path = line.strip()
+            match = re.search(r"orders_(\d{14})", file_path)
+            if match:
+                file_datetime = datetime.strptime(match.group(1), "%Y%m%d%H%M%S")
+                if latest_datetime is None or file_datetime > latest_datetime:
+                    latest_datetime = file_datetime
+                    latest_file = file_path
 
-    if latest_file:
-        latest_file_uri = f"gs://{bucket_name}/{latest_file}"
-        logger.info(f"✅ Arquivo mais recente encontrado: {latest_file_uri}")
-        return latest_file_uri
-    else:
-        raise FileNotFoundError("Nenhum arquivo no formato esperado foi encontrado.")
+        if latest_file:
+            logger.info(f"✅ Arquivo mais recente encontrado no log: {latest_file}")
+            return latest_file
+        else:
+            raise FileNotFoundError("Nenhum arquivo no formato esperado foi encontrado no log.")
+    except FileNotFoundError:
+        raise FileNotFoundError("O arquivo de log não foi encontrado.")
+    except Exception as e:
+        logger.error(f"Erro ao ler o arquivo de log: {e}")
+        raise
+
 
 def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table_id: str, trusted_table_id: str, uri: str):
     """
@@ -70,21 +79,39 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
     trusted_exists = table_exists(trusted_table_id)
 
     if not raw_exists or not trusted_exists:
-
+        #schema = [
+        #    bigquery.SchemaField("order_id", "INTEGER", mode="REQUIRED"),
+        #    bigquery.SchemaField("order_date", "TIMESTAMP", mode="REQUIRED"),
+        #    bigquery.SchemaField("order_customer_id", "INTEGER", mode="REQUIRED"),
+        #    bigquery.SchemaField("order_status", "STRING", mode="REQUIRED"),
+        #]
+        #job_config = bigquery.LoadJobConfig(schema=schema, write_disposition="WRITE_TRUNCATE")
         
         job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "order_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único do pedido"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "order_date", 
+                "TIMESTAMP", 
+                mode="REQUIRED", 
+                description="Data e hora em que o pedido foi realizado"
+            ),
+            bigquery.SchemaField(
+                "order_customer_id", 
+                "INTEGER", 
+                mode="REQUIRED", 
+                description="ID do cliente que fez o pedido"
+            ),
+            bigquery.SchemaField(
+                "order_status", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Status atual do pedido (ex: 'em processamento', 'enviado')"
             )
             ]
         )
@@ -99,7 +126,7 @@ def verify_and_create_tables(client: bigquery.Client, dataset_id: str, raw_table
         table = client.get_table(table_id)
 
         # Atualizar descrição da tabela
-        table.description = "Tabela contendo os departamentos confiáveis do banco de dados de varejo."
+        table.description = "Tabela contendo os pedidos confiáveis do banco de dados de varejo."
         table = client.update_table(table, ["description"])
 
         # Pipeline termina aqui se as tabelas foram criadas
@@ -117,31 +144,50 @@ def load_data_to_raw(client: bigquery.Client, raw_table_id: str, uri: str):
     """
     logger.info(f"🧹 Removendo dados mais antigos que {raw_table_id} dias da tabela RAW.")
     client.query(query).result()
+    logger.info("✅ Dados antigos removidos da tabela RAW.")
 
     job_config = bigquery.LoadJobConfig(
         schema=[
             bigquery.SchemaField(
-                "department_id", 
+                "order_id", 
                 "INTEGER", 
                 mode="REQUIRED", 
-                description="ID único do departamento"
+                description="ID único do pedido"
             ),
             bigquery.SchemaField(
-                "department_name", 
+                "order_date", 
+                "TIMESTAMP", 
+                mode="REQUIRED", 
+                description="Data e hora em que o pedido foi realizado"
+            ),
+            bigquery.SchemaField(
+                "order_customer_id", 
+                "INTEGER", 
+                mode="REQUIRED", 
+                description="ID do cliente que fez o pedido"
+            ),
+            bigquery.SchemaField(
+                "order_status", 
                 "STRING", 
                 mode="REQUIRED", 
-                description="Nome do departamento"
+                description="Status atual do pedido (ex: 'em processamento', 'enviado')"
             )
             ]
         )
-    
- 
+    #load_job = client.load_table_from_uri(
+    #    uri, raw_table_id, job_config=job_config
+    #)  
+    #load_job.result() 
     for table_id in [raw_table_id]:
             load_job = client.load_table_from_uri(uri, table_id, job_config=job_config)
             load_job.result()
             logger.info(f"✅ Tabela criada e dados carregados: {table_id}")
 
+        # Obter a tabela
 
+    #job_config = bigquery.LoadJobConfig(schema=schema, write_disposition="WRITE_TRUNCATE")
+    #load_job = client.load_table_from_uri(uri, raw_table_id, job_config=job_config)
+    #load_job.result()
     
     logger.info(f"✅ Dados carregados na tabela RAW: {raw_table_id}")
 
@@ -152,12 +198,14 @@ def merge_raw_to_trusted(client: bigquery.Client, raw_table_id: str, trusted_tab
     merge_query = f"""
     MERGE `{trusted_table_id}` T
     USING `{raw_table_id}` R
-    ON T.department_id = R.department_id
+    ON T.order_id = R.order_id
     WHEN MATCHED THEN
-        UPDATE SET department_name = R.department_name
+        UPDATE SET order_date = R.order_date,
+                   order_customer_id = R.order_customer_id,
+                   order_status = R.order_status
     WHEN NOT MATCHED THEN
-        INSERT (department_id, department_name)
-        VALUES (R.department_id, R.department_name)
+        INSERT (order_id, order_date, order_customer_id, order_status)
+        VALUES (R.order_id, R.order_date, R.order_customer_id, R.order_status)
     """
     query_job = client.query(merge_query)
     query_job.result()
@@ -172,13 +220,24 @@ def main():
     raw_table_id = f"{dataset_id}.{RAW_TABLE_NAME}"
     trusted_table_id = f"{dataset_id}.{TRUSTED_TABLE_NAME}"
 
-    prefix = "departments/"
+    prefix = "orders/"
     # Obter o arquivo mais recente
+    
+
+    log_file = "../../logs/bucket/order_uploaded_files.log"
+
     try:
-        uri = get_most_recent_file(BUCKET_NAME, PREFIX)
+        most_recent_file = get_most_recent_file_from_log(log_file)
+        # Remover barras extras ao concatenar
+        uri = f"gs://{BUCKET_NAME}/{PREFIX.rstrip('/')}/{most_recent_file.lstrip('/')}"
+        logger.info(f"Arquivo mais recente encontrado: {uri}")
     except FileNotFoundError as e:
-        logger.error(f"❌ Erro ao buscar o arquivo mais recente: {e}")
+        logger.error(f"Erro: {e}")
         return
+    except Exception as e:
+        logger.error(f"Ocorreu um erro inesperado: {e}")
+        return
+
 
     # 1. Verificar/criar tabelas
     tables_created = verify_and_create_tables(client, dataset_id, raw_table_id, trusted_table_id, uri)

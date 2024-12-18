@@ -235,7 +235,7 @@ def upload_new_files_to_gcs(
     local_folder: str, 
     bucket_name: str, 
     gcs_folder: str = "", 
-    log_file: str = "../../logs/bucket/uploaded_files.log",
+    log_file: str = "../../logs/bucket/products_uploaded_files.log",
     verbose: bool = True
 ) -> Dict[str, int]:
     """
@@ -340,7 +340,7 @@ if __name__ == "__main__":
         buckets = list_gcs_buckets(gsclient, verbose=True)
 
         # 3. Criar novo bucket
-        bucket_name = "raw_retail"
+        bucket_name = "ingestion-raw-data-retail"
         logger.info(f"🪣 Criando bucket: {bucket_name}")
         created_bucket = create_gcs_bucket(
             bucket_name=bucket_name, 
@@ -350,9 +350,9 @@ if __name__ == "__main__":
             verbose=True
         )
         # 4. Fazer upload de pasta
-        local_folder = "../../data/retail_db/departments"
-        gcs_folder = "departments"  # Pasta lógica no GCS
-        log_file = "../../logs/bucket/uploaded_files.log"  # Log local para rastrear uploads
+        local_folder = "../../data/retail_db/products"
+        gcs_folder = "products"  # Pasta lógica no GCS
+        log_file = "../../logs/bucket/products_uploaded_files.log"  # Log local para rastrear uploads
 
         logger.info(f"📤 Iniciando upload da pasta: {local_folder} para a pasta lógica {gcs_folder}")
         upload_stats = upload_new_files_to_gcs(

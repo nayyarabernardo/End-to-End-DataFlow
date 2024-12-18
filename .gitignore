@@ -42,9 +42,14 @@ airflow.cfg
 *.temp
 *.bak
 *.swp
+
+#Arquivos de Teste
 01.manage_files _GCS _simples.ipynb
 01.file_to_parket.ipynb
 02.manage_tables_bigquery_simples.ipynb
+scripts/Outros
+
+
 
 # Pastas e arquivos relacionados a IDEs
 .vscode/

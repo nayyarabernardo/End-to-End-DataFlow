@@ -115,22 +115,21 @@ services:
       start_period: 30s
     restart: always
 
-  airflow-webserver:
-    <<: *airflow-common
-    command: webserver
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    restart: always
-    depends_on:
-      <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
+
+  webserver:
+      image: apache/airflow:2.9.1
+      container_name: end-to-end-dataflow-airflow-webserver-1
+      environment:
+        - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/key.json
+      volumes:
+        - ./key.json:/opt/airflow/key.json
+      ports:
+        - "8080:8080"
+      depends_on:
+        - postgres
+        - redis
+        #- scheduler
+
 
   airflow-scheduler:
     <<: *airflow-common
@@ -286,3 +285,4 @@ services:
 
 volumes:
   postgres-db-volume:
+

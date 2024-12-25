@@ -10,23 +10,19 @@ from ingestion_table_retail import (
 )
 
 
-
-# Configurações específicas para a tabela "categories"
-NOME = "categories"
+NOME = "departments"
 PROJECT_ID = "bankmarketingdatapipeline"
 DATASET_NAME = "db_retail"
 BUCKET_NAME = "ingestion-raw-data-retail"
-PREFIX = "categories/"
-TABLE_RAW_NAME = "raw_categories"
-TABLE_TRUSTED_NAME = "trusted_categories"
-TABLE_DESCRIPTION = "Tabela contendo os pedidos confiáveis do banco de dados de varejo."
+PREFIX = "departments/"
+TABLE_RAW_NAME = "raw_departments"
+TABLE_TRUSTED_NAME = "trusted_departments"
+TABLE_DESCRIPTION = "Tabela contendo os departamentos confiáveis do banco de dados de varejo."
 
 
-# Esquema de tabelas (evita duplicação)
 SCHEMA = [
-    bigquery.SchemaField("category_id", "INTEGER", mode="REQUIRED", description="ID único da categoria"),
-    bigquery.SchemaField("category_department_id", "INTEGER", mode="REQUIRED", description="ID do departamento"),
-    bigquery.SchemaField("category_name", "STRING", mode="REQUIRED", description="Nome da categoria"),
+    bigquery.SchemaField("department_id", "INTEGER", mode="REQUIRED", description="ID único da departamento"),
+    bigquery.SchemaField("department_name", "STRING", mode="REQUIRED", description="Nome da departamento")
 ]
 
 

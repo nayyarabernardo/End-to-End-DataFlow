@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: db_retail
+    description: "Tabelas utilizadas no db_retail"
+    database: bankmarketingdatapipeline
+    schema: db_retail 
+    tables:
+      - name: trusted_categories
+      - name: trusted_customers
+      - name: trusted_departments
+      - name: trusted_order_items
+      - name: trusted_products

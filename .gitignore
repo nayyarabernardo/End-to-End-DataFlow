@@ -15,9 +15,18 @@ improved-readme.md
 prediction.ipynb
 fluxo-branch.md
 
+
+profiles.yml
+.user.yml
+packages.yml
+dbt_project.yml
+dbt_packages/
+dbt_packages/
+target/
 # Ambientes virtuais
 env/
 venv/
+venvdbt
 .venv/
 
 # Arquivos de log
@@ -42,9 +51,14 @@ airflow.cfg
 *.temp
 *.bak
 *.swp
+
+#Arquivos de Teste
 01.manage_files _GCS _simples.ipynb
 01.file_to_parket.ipynb
 02.manage_tables_bigquery_simples.ipynb
+scripts/Outros
+
+
 
 # Pastas e arquivos relacionados a IDEs
 .vscode/

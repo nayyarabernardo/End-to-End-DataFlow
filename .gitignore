@@ -15,9 +15,18 @@ improved-readme.md
 prediction.ipynb
 fluxo-branch.md
 
+
+profiles.yml
+.user.yml
+packages.yml
+dbt_project.yml
+dbt_packages/
+dbt_packages/
+target/
 # Ambientes virtuais
 env/
 venv/
+venvdbt
 .venv/
 
 # Arquivos de log

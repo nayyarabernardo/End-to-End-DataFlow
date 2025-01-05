@@ -21,7 +21,8 @@ def list_files_in_bucket(gsclient: storage.Client, bucket_name: str, prefix: str
         print(f"Erro ao listar arquivos: {e}")
         return []
 
-
+    #MUdar como ele ler e sim pela data do dia anterior e nao fazer duas listas //Revisar codigo
+    
 def list_local_files(origem: str, name: str) -> List[str]:
     """
     Lista todos os arquivos CSV dentro de uma pasta local.

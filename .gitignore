@@ -11,6 +11,7 @@ __pycache__/
 # Credenciais e chaves de API
 key.json
 .env
+ideias.txt
 improved-readme.md
 prediction.ipynb
 fluxo-branch.md

@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-from google.cloud import bigquery
+from google.cloud import bigquery,storage
 from ingestion_table_retail import (
     get_most_recent_file,
     verify_and_create_tables,
